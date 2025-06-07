@@ -225,42 +225,72 @@ def main():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("📈 Valuation vs Time Analysis")
+        st.subheader("📈 Valuation Distribution")
+        # Create histogram showing valuation distribution
+        hist_fig = px.histogram(
+            filtered_df,
+            x='Valuation ($B)',
+            nbins=20,
+            title="Distribution of Company Valuations",
+            color_discrete_sequence=['#3498db'],
+            opacity=0.7
+        )
+        hist_fig.update_layout(
+            xaxis_title="Valuation (Billions $)",
+            yaxis_title="Number of Companies",
+            showlegend=False
+        )
+        st.plotly_chart(hist_fig, use_container_width=True)
+    
+    with col2:
+        st.subheader("📈 Timeline Trend Analysis")
         if 'Date Joined' in filtered_df.columns and not filtered_df['Date Joined'].isna().all():
-            timeline_fig = px.scatter(
-                filtered_df,
-                x='Date Joined',
-                y='Valuation ($B)',
-                color='Industry',
-                size='Valuation ($B)',
-                hover_data=['Company', 'Country'],
-                title="Unicorn Emergence Timeline vs Valuation"
+            # Group by year for trend analysis
+            yearly_data = filtered_df.groupby(filtered_df['Date Joined'].dt.year).agg({
+                'Company': 'count',
+                'Valuation ($B)': 'sum'
+            }).reset_index()
+            yearly_data.columns = ['Year', 'New Unicorns', 'Total Valuation ($B)']
+            
+            timeline_fig = px.line(
+                yearly_data,
+                x='Year',
+                y='New Unicorns',
+                title="Unicorn Emergence Trend Over Time",
+                markers=True,
+                color_discrete_sequence=['#e74c3c']
+            )
+            timeline_fig.update_layout(
+                xaxis_title="Year",
+                yaxis_title="Number of New Unicorns"
             )
         else:
-            timeline_fig = px.histogram(
+            # Fallback scatter plot if no date data
+            timeline_fig = px.scatter(
                 filtered_df,
                 x='Industry',
                 y='Valuation ($B)',
-                title="Valuation Distribution by Industry",
-                color='Industry'
+                color='Industry',
+                size='Valuation ($B)',
+                title="Valuation by Industry",
+                hover_data=['Company', 'Country']
             )
         st.plotly_chart(timeline_fig, use_container_width=True)
     
-    with col2:
-        st.subheader("💰 Top 15 Highest Valued Unicorns")
-        top_companies = filtered_df.nlargest(15, 'Valuation ($B)')
-        top_fig = px.bar(
-            top_companies,
-            x='Valuation ($B)',
-            y='Company',
-            orientation='h',
-            color='Industry',
-            title="Highest Valued Companies",
-            text='Valuation ($B)'
-        )
-        top_fig.update_layout(yaxis={'categoryorder': 'total ascending'})
-        top_fig.update_traces(texttemplate='$%{text}B', textposition='outside')
-        st.plotly_chart(top_fig, use_container_width=True)
+    # Third row - Top companies chart
+    st.subheader("💰 Top 15 Highest Valued Unicorns")
+    top_companies = filtered_df.nlargest(15, 'Valuation ($B)')
+    top_fig = px.bar(
+        top_companies,
+        x='Valuation ($B)',
+        y='Company',
+        orientation='h',
+        color='Industry',
+        title="Highest Valued Companies",
+        text='Valuation ($B)'
+    )
+    top_fig.update_layout(yaxis={'categoryorder': 'total ascending'})
+    top_fig.update_traces(texttemplate='$%{text}B', textposition='outside')
     
     # Statistical Analysis
     st.header("📖 Data Story & Statistical Insights")
