@@ -291,7 +291,7 @@ def main():
     )
     top_fig.update_layout(yaxis={'categoryorder': 'total ascending'})
     top_fig.update_traces(texttemplate='$%{text}B', textposition='outside')
-    
+    st.plotly_chart(top_fig, use_container_width=True)
     # Statistical Analysis
     st.header("📖 Data Story & Statistical Insights")
     
